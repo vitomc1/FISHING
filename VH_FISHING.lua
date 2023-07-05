@@ -10,7 +10,7 @@ local pecksFish = {}
 
 local fa5 = require("fAwesome5")
 local fa 	= require "faIcons"
-
+local effil = require 'effil'
 local imgui = require "imgui"
 local encoding = require "encoding"
 encoding.default = "CP1251"
@@ -480,7 +480,7 @@ function darkgreentheme()
     colors[clr.FrameBgActive]          = ImVec4(0.34, 0.34, 0.34, 0.79)
     colors[clr.TitleBg]                = ImVec4(0.00, 0.69, 0.33, 0.80)
     colors[clr.TitleBgActive]          = ImVec4(0.00, 0.74, 0.36, 1.00)
-    colors[clr.TitleBFISHollapsed]       = ImVec4(0.00, 0.69, 0.33, 0.50)
+    colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.69, 0.33, 0.50)
     colors[clr.MenuBarBg]              = ImVec4(0.00, 0.80, 0.38, 1.00)
     colors[clr.ScrollbarBg]            = ImVec4(0.16, 0.16, 0.16, 1.00)
     colors[clr.ScrollbarGrab]          = ImVec4(0.00, 0.69, 0.33, 1.00)
