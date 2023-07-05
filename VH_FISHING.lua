@@ -432,6 +432,12 @@ function imgui.OnDrawFrame()
 			imgui.SameLine()
 			imgui.Button("(?)", imgui.ImVec2(25, 20))
 			imgui.Hint(u8("Авто продажа рыбы, просто встаньте к NPC, нажмите на alt"))
+			imgui.SameLine()
+			if sellfish.v then
+				imgui.Text("ON")
+			else
+				imgui.Text("OFF")
+			end
 imgui.EndChild()
 			imgui.EndChild()
 		else
