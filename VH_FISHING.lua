@@ -1,12 +1,13 @@
 script_author("VitoH")
 
-script_version("0.1")
+script_version("0.2")
 script_version_number(16)
 
 local sampev = require 'lib.samp.events'
 local textCoords = {x = nil, y = nil, z = nil}
 local pecksCoin = 0
 local pecksFish = {}
+local sellCoint = 0
 
 local fa5 = require("fAwesome5")
 local fa 	= require "faIcons"
@@ -20,7 +21,8 @@ local mainMenu = imgui.ImBool(false)
 local rx, ry 				= getScreenResolution() -- // Размер экрана
 
 local takebait = false
-local fishrod = false
+fishrod = imgui.ImBool(false)
+hideSadok = imgui.ImBool(false)
 local exithook = false
 local exitrod = false
 
@@ -65,7 +67,7 @@ sellfish = imgui.ImBool(false)
 local dlstatus = require('moonloader').download_status
 
 function update()
-  local fpath = os.getenv('TEMP') .. '\\testing_version.json' -- куда будет качаться наш файлик для сравнения версии
+  local fpath = os.getenv('TEMP') .. '\\testing_version_fishing.json' -- куда будет качаться наш файлик для сравнения версии
   downloadUrlToFile('https://raw.githubusercontent.com/vitomc1/FISHING/main/version.json', fpath, function(id, status, p1, p2) -- ссылку на ваш гитхаб где есть строчки которые я ввёл в теме или любой другой сайт
     if status == dlstatus.STATUS_ENDDOWNLOADDATA then
     local f = io.open(fpath, 'r') -- открывает файл
@@ -106,12 +108,12 @@ function main()
 		lua_thread.create(fishcd)
 		sampRegisterChatCommand("gofish", function()
 			active.v = not active.v
-			sampAddChatMessage(active.v and "Скрипт активирован!" or "Скрипт отключен!", 0x098FB98)
+			sampAddChatMessage(active.v and "[FISH]: {98FB98}Авто рыбалка активирована, подойдите к реке и введите /fish" or "[FISH]: {98FB98}Авто рыбалка выключена!", 0x098FB98)
 		end)
 
 		sampRegisterChatCommand("sellfish", function()
 			sellfish.v = not sellfish.v
-			sampAddChatMessage(sellfish.v and "Авто продажа рыб включена!" or "Авто продажа рыб выключена!", 0x098FB98)
+			sampAddChatMessage(sellfish.v and "[FISH]: {98FB98}Авто продажа рыб в лавке выключена!" or "[FISH]: {98FB98}Авто продажа рыб выключена!", 0x098FB98)
 		end)
 
 		sampRegisterChatCommand(
@@ -124,7 +126,7 @@ function main()
 		sampRegisterChatCommand("rodfish", function()
 			lua_thread.create(function()
 			active.v = true
-			fishrod = true
+			fishrod.v = true
 			sampSendChat("/invex")
 		end)
 		end)
@@ -160,18 +162,26 @@ function sampev.onShowDialog(id, stytle, title, btn1, btn2, text)
 			sampSendDialogResponse(8271, 1, 4, "")
 		end
 		if id == 8275 and sellfish.v then
-			sampSendDialogResponse(8270, 1, 0, "")
-		end
+
+
 
 		local i = 0
 		for item in text:gmatch("[^\r\n]+") do
 			i = i + 1
 			for key, val in pairs(fishs) do
 		if item:find(val) ~= nil then
+			sellCoint = sellCoint + 1
 			sampSendDialogResponse(id, 1, i-1, "")
 		end
 		end
-		sampSendDialogResponse(id, 0, 0, "")
+
+			end
+			if sellCoint == 0 then
+			sampAddChatMessage("[FISH]: {98FB98}Рыба закончилась!", -1)
+			sampSendDialogResponse(id, 0, 0, "")
+			sellfish.v = false
+		end
+			return false
 	end
 
 	if id == 8275 and sellfish.v then
@@ -183,6 +193,7 @@ function sampev.onShowDialog(id, stytle, title, btn1, btn2, text)
 	end
 	if id == 8272 and sellfish.v then
 		sampSendDialogResponse(8272, 1, 0, "")
+		sellCoint = 0
 	end
 
 	if id == 8275 and sellfish.v then
@@ -202,8 +213,9 @@ end
 				end
 			end
 
-		sampAddChatMessage("Закончилась приманка!", -1)
-
+		sampAddChatMessage("[FISH]: {98FB98}Приманка закончилась!", -1)
+		sampSendDialogResponse(id, 0, 0, "")
+		takebait = false
 		return false
 
 	end
@@ -231,8 +243,9 @@ end
 			 		return false
 			end
 		end
-		sampAddChatMessage("Закончились крючки!", -1)
-
+		sampAddChatMessage("[FISH]: {98FB98}Закончились все крючки!", -1)
+		sampSendDialogResponse(id, 0, 0, "")
+		fishHook = false
 		return false
 	end
 	if id == 1001 and fishHook then
@@ -258,23 +271,24 @@ end
 	end
 
 
-if id == 1000 and fishrod then
+if id == 1000 and fishrod.v then
 	local i = 0
 	for item in text:gmatch("[^\r\n]+") do
 		i = i + 1
-		if item:find("Нету дочки без крючка") ~= nil then
+		if item:find("Удочка без крючка") ~= nil then
 				sampSendDialogResponse(id, 1, i-1, "")
 				return false
 		end
 	end
-	sampAddChatMessage("Удочек нет", -1)
-	fishHook = true
+	sampAddChatMessage("[FISH]: {98FB98}Закончились все удочки!", -1)
+	sampSendDialogResponse(id, 0, 0, "")
+	fishrod.v = false
 return false
 end
-if id == 1001 and fishrod then
+if id == 1001 and fishrod.v then
 	sampSendDialogResponse(1001, 1, 5, "")
 
-	fishrod = false
+	fishrod.v = false
 fishHook = true
 	return false
 end
@@ -291,11 +305,9 @@ function sampev.onServerMessage(color, text)
 		if text:find(sampGetPlayerNickname(id).." .* удочку в воду.") then
 		myfloat = true
 	end
-	if text:find(sampGetPlayerNickname(id).." поймал .*") then
-		local fishh = text:match(sampGetPlayerNickname(id).." поймал (.*)")
+	if text:find(sampGetPlayerNickname(id).." поймал .*") or text:find(sampGetPlayerNickname(id).." поймала .*") then
 		cX = 0
 		cY = 0
-		sampAddChatMessage(fishh, -1)
 		printStyledString("~w~+fish ~r~", 2000, 6)
 			wait(100)
 		takebait = true
@@ -359,7 +371,7 @@ function imgui.OnDrawFrame()
 	if mainMenu.v then
 		imgui.SetNextWindowSize(imgui.ImVec2(370, 300))
 		imgui.SetNextWindowPos(imgui.ImVec2(rx / 2, ry / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-			imgui.Begin(u8(" GOS Checker | Trinity GTA"), mainMenu, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize)
+			imgui.Begin(u8(" FISHING | Trinity GTA"), mainMenu, imgui.WindowFlags.NoCollapse + imgui.WindowFlags.NoResize)
 			imgui.BeginChild("#UP_PANEL", imgui.ImVec2(355, 35), true)
 			if imgui.Checkbox(u8'Включить авторыбалку?', active) then
 
@@ -372,7 +384,7 @@ function imgui.OnDrawFrame()
 				imgui.Text("1) ")
 				imgui.SameLine()
 			if imgui.Button(u8"Взять удочку + полностью экипировать", imgui.ImVec2(250, 24)) then
-				fishrod = true
+				fishrod.v = true
 				sampSendChat("/invex")
 			end
 			imgui.SameLine()
@@ -402,6 +414,7 @@ function imgui.OnDrawFrame()
 			imgui.SameLine()
 			imgui.Button("(?)", imgui.ImVec2(25, 20))
 			imgui.Hint(u8("Используйте, если уже надет крючек, приманку наденет сам"))
+
 
 			imgui.EndChild()
 			imgui.Text("")
